@@ -19,4 +19,8 @@ lint:
 publish:
 	npm publish
 
+deploy:
+	cp CNAME dist/
+	surge dist/
+
 .PHONY: test
