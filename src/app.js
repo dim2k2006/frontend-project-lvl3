@@ -19,6 +19,10 @@ const parseData = (string, type) => {
   return { title, description, posts };
 };
 
+// TODO
+// 1. Prealoder on fetching
+// 2. Disable all form during fetching
+// 3. Layout (list of feed to aside column, list of posts in the middle)
 
 export default () => {
   const cors = 'https://cors-anywhere.herokuapp.com/';
