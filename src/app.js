@@ -1,10 +1,28 @@
+import axios from 'axios';
 import { watch } from 'melanke-watchjs';
 import isURL from 'validator/lib/isURL';
 import isEmpty from 'validator/lib/isEmpty';
 import get from 'lodash/get';
 import includes from 'lodash/includes';
 
+const parseData = (string, type) => {
+  const domparser = new DOMParser();
+  const doc = domparser.parseFromString(string, type);
+  const title = doc.querySelector('title').textContent;
+  const description = doc.querySelector('description').textContent;
+  const posts = [].slice.call(doc.querySelectorAll('item'))
+    .map(item => ({
+      title: item.querySelector('title').textContent,
+      link: item.querySelector('link').textContent,
+    }));
+
+  return { title, description, posts };
+};
+
+
 export default () => {
+  const cors = 'https://cors-anywhere.herokuapp.com/';
+
   const state = {
     form: {
       isValid: true,
@@ -27,7 +45,7 @@ export default () => {
 
   const renderFeeds = (s) => {
     const html = s.feeds
-      .map(feed => `<li class="list-group-item">${feed}</li>`)
+      .map(feed => `<li class="list-group-item"><h5>${feed.title}</h5><p>${feed.description}</p></li>`)
       .join('');
 
     feeds.innerHTML = html;
@@ -43,7 +61,7 @@ export default () => {
 
   formInput.addEventListener('input', (event) => {
     const value = get(event, 'target.value', '');
-    const isValid = isURL(value) && !includes(state.feeds, value);
+    const isValid = isURL(value) && !includes(state.feeds.map(f => f.url), value);
 
     if (isEmpty(value)) {
       state.form.isValid = true;
@@ -66,12 +84,27 @@ export default () => {
   form.addEventListener('submit', (event) => {
     event.preventDefault();
 
-    state.feeds.push(formInput.value);
+    const feedUrl = formInput.value;
 
-    form.reset();
+    const onResolve = (response) => {
+      const feed = parseData(get(response, 'data', ''), 'application/xml');
 
-    state.form.isValid = true;
-    state.form.submitDisabled = true;
+      state.feeds.push({ ...feed, url: feedUrl });
+
+      form.reset();
+
+      state.form.isValid = true;
+      state.form.submitDisabled = true;
+    };
+
+    const onReject = () => {
+      alert('Something went wrong. Please try again.');
+    };
+
+    axios
+      .get(`${cors}${feedUrl}`)
+      .then(onResolve)
+      .catch(onReject);
   });
 
   renderForm(state);
