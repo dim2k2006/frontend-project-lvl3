@@ -2,6 +2,7 @@ import { watch } from 'melanke-watchjs';
 import isURL from 'validator/lib/isURL';
 import isEmpty from 'validator/lib/isEmpty';
 import get from 'lodash/get';
+import includes from 'lodash/includes';
 
 export default () => {
   const state = {
@@ -9,23 +10,40 @@ export default () => {
       isValid: true,
       submitDisabled: true,
     },
+    feeds: [],
+    posts: [],
   };
 
-  const formInput = document.querySelector('form input');
-  const formButton = document.querySelector('form button');
+  const form = document.querySelector('form');
+  const formInput = form.querySelector('input');
+  const formButton = form.querySelector('button');
+
+  const feeds = document.querySelector('#feeds');
 
   const renderForm = (s) => {
     formInput.classList[s.form.isValid ? 'remove' : 'add']('is-invalid');
     formButton.disabled = s.form.submitDisabled;
   };
 
+  const renderFeeds = (s) => {
+    const html = s.feeds
+      .map(feed => `<li class="list-group-item">${feed}</li>`)
+      .join('');
+
+    feeds.innerHTML = html;
+  };
+
   watch(state, 'form', () => {
     renderForm(state);
   });
 
+  watch(state, 'feeds', () => {
+    renderFeeds(state);
+  });
+
   formInput.addEventListener('input', (event) => {
     const value = get(event, 'target.value', '');
-    const isValid = isURL(value);
+    const isValid = isURL(value) && !includes(state.feeds, value);
 
     if (isEmpty(value)) {
       state.form.isValid = true;
@@ -45,5 +63,12 @@ export default () => {
     state.form.submitDisabled = true;
   });
 
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+    state.feeds.push(formInput.value);
+  });
+
   renderForm(state);
+  renderFeeds(state);
 };

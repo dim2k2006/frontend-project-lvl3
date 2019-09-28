@@ -4,16 +4,30 @@
     <title>Rss Feed</title>
   </head>
   <body>
-    <div class="jumbotron">
-      <form novalidate>
-        <div class="form-group">
-          <label for="rss-feed">Rss Feed</label>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="jumbotron">
+            <form action="#" novalidate>
+              <div class="form-group">
+                <label for="rss-feed">Rss Feed</label>
 
-          <input type="text" class="form-control" id="rss-feed" placeholder="Enter rss feed">
+                <input type="text" class="form-control" id="rss-feed" placeholder="Enter rss feed">
+              </div>
+
+              <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+          </div>
         </div>
+      </div>
 
-        <button type="submit" class="btn btn-primary">Submit</button>
-      </form>
+      <div class="row">
+        <div class="col-sm-6">
+          <ul id="feeds" class="list-group">
+<!--            <li class="list-group-item">Cras justo odio</li>-->
+          </ul>
+        </div>
+      </div>
     </div>
   </body>
 </html>
