@@ -67,6 +67,11 @@ export default () => {
     event.preventDefault();
 
     state.feeds.push(formInput.value);
+
+    form.reset();
+
+    state.form.isValid = true;
+    state.form.submitDisabled = true;
   });
 
   renderForm(state);
