@@ -20,8 +20,8 @@ const parseData = (string, type) => {
 };
 
 // TODO
-// 1. Prealoder on fetching
 // 2. Disable all form during fetching
+// 3. Обработать ошибку onReject
 // 3. Layout (list of feed to aside column, list of posts in the middle)
 
 export default () => {
@@ -30,6 +30,7 @@ export default () => {
   const state = {
     form: {
       isValid: true,
+      isFetching: false,
       submitDisabled: true,
     },
     feeds: [],
@@ -39,12 +40,14 @@ export default () => {
   const form = document.querySelector('form');
   const formInput = form.querySelector('input');
   const formButton = form.querySelector('button');
-
+  const spinner = formButton.querySelector('span');
   const feeds = document.querySelector('#feeds');
 
   const renderForm = (s) => {
     formInput.classList[s.form.isValid ? 'remove' : 'add']('is-invalid');
-    formButton.disabled = s.form.submitDisabled;
+    formInput.disabled = s.form.isFetching;
+    formButton.disabled = s.form.isFetching || s.form.submitDisabled;
+    spinner.style.display = s.form.isFetching ? 'inline-block' : 'none';
   };
 
   const renderFeeds = (s) => {
@@ -105,10 +108,15 @@ export default () => {
       alert('Something went wrong. Please try again.');
     };
 
+    state.form.isFetching = true;
+
     axios
       .get(`${cors}${feedUrl}`)
       .then(onResolve)
-      .catch(onReject);
+      .catch(onReject)
+      .finally(() => {
+        state.form.isFetching = false;
+      });
   });
 
   renderForm(state);
