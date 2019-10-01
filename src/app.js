@@ -19,11 +19,6 @@ const parseData = (string, type) => {
   return { title, description, posts };
 };
 
-// TODO
-// 2. Disable all form during fetching
-// 3. Обработать ошибку onReject
-// 3. Layout (list of feed to aside column, list of posts in the middle)
-
 export default () => {
   const cors = 'https://cors-anywhere.herokuapp.com/';
 
@@ -34,7 +29,6 @@ export default () => {
       submitDisabled: true,
     },
     feeds: [],
-    posts: [],
   };
 
   const form = document.querySelector('form');
@@ -42,6 +36,7 @@ export default () => {
   const formButton = form.querySelector('button');
   const spinner = formButton.querySelector('span');
   const feeds = document.querySelector('#feeds');
+  const posts = document.querySelector('#posts');
 
   const renderForm = (s) => {
     formInput.classList[s.form.isValid ? 'remove' : 'add']('is-invalid');
@@ -58,12 +53,27 @@ export default () => {
     feeds.innerHTML = html;
   };
 
+  const renderPosts = (s) => {
+    const html = s.feeds
+      .map((feed) => {
+        const postsHtml = feed.posts
+          .map(post => `<li><a href="${post.link}" target="_blank">${post.title}</a></li>`)
+          .join('');
+
+        return `<li class="list-group-item"><h5>${feed.title}</h5><ul>${postsHtml}</ul></li>`;
+      })
+      .join('');
+
+    posts.innerHTML = html;
+  };
+
   watch(state, 'form', () => {
     renderForm(state);
   });
 
   watch(state, 'feeds', () => {
     renderFeeds(state);
+    renderPosts(state);
   });
 
   formInput.addEventListener('input', (event) => {
@@ -121,4 +131,5 @@ export default () => {
 
   renderForm(state);
   renderFeeds(state);
+  renderPosts(state);
 };
