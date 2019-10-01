@@ -4,6 +4,7 @@ import isURL from 'validator/lib/isURL';
 import isEmpty from 'validator/lib/isEmpty';
 import get from 'lodash/get';
 import includes from 'lodash/includes';
+import uuidv4 from 'uuid/v4';
 
 const parseData = (string, type) => {
   const domparser = new DOMParser();
@@ -12,7 +13,9 @@ const parseData = (string, type) => {
   const description = doc.querySelector('description').textContent;
   const posts = [].slice.call(doc.querySelectorAll('item'))
     .map(item => ({
+      id: uuidv4(),
       title: item.querySelector('title').textContent,
+      description: item.querySelector('description').textContent,
       link: item.querySelector('link').textContent,
     }));
 
@@ -29,6 +32,10 @@ export default () => {
       submitDisabled: true,
     },
     feeds: [],
+    modal: {
+      title: '',
+      description: '',
+    },
   };
 
   const form = document.querySelector('form');
@@ -37,6 +44,9 @@ export default () => {
   const spinner = formButton.querySelector('span');
   const feeds = document.querySelector('#feeds');
   const posts = document.querySelector('#posts');
+  const modal = document.querySelector('#modal');
+  const modalTitle = modal.querySelector('.modal-title');
+  const modalBody = modal.querySelector('.modal-body');
 
   const renderForm = (s) => {
     formInput.classList[s.form.isValid ? 'remove' : 'add']('is-invalid');
@@ -57,14 +67,33 @@ export default () => {
     const html = s.feeds
       .map((feed) => {
         const postsHtml = feed.posts
-          .map(post => `<li><a href="${post.link}" target="_blank">${post.title}</a></li>`)
+          .map(post => `
+              <div class="card" style="margin-bottom: 15px;">
+                  <div class="card-body">
+                    <div>
+                        <a href="${post.link}" target="_blank">${post.title}</a>
+                    </div>
+                    
+                    <br>
+                    
+                    <div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#modal" data-id="${post.id}">Preview</button>
+                    </div>
+                  </div>
+              </div>
+            `)
           .join('');
 
-        return `<li class="list-group-item"><h5>${feed.title}</h5><ul>${postsHtml}</ul></li>`;
+        return `<li class="list-group-item"><h5>${feed.title}</h5>${postsHtml}</li>`;
       })
       .join('');
 
     posts.innerHTML = html;
+  };
+
+  const renderModal = (s) => {
+    modalTitle.textContent = s.modal.title;
+    modalBody.textContent = s.modal.description;
   };
 
   watch(state, 'form', () => {
@@ -74,6 +103,10 @@ export default () => {
   watch(state, 'feeds', () => {
     renderFeeds(state);
     renderPosts(state);
+  });
+
+  watch(state, 'modal', () => {
+    renderModal(state);
   });
 
   formInput.addEventListener('input', (event) => {
@@ -129,7 +162,22 @@ export default () => {
       });
   });
 
+  posts.addEventListener('click', (event) => {
+    const isModalButton = get(event, 'target.dataset.toggle', undefined) === 'modal';
+
+    if (!isModalButton) return;
+
+    const id = get(event, 'target.dataset.id', undefined);
+    const [selectedPost] = state.feeds
+      .reduce((accumulator, feed) => [...accumulator, ...feed.posts], [])
+      .filter(post => post.id === id);
+
+    state.modal.title = selectedPost.title;
+    state.modal.description = selectedPost.description;
+  });
+
   renderForm(state);
   renderFeeds(state);
   renderPosts(state);
+  renderModal(state);
 };
