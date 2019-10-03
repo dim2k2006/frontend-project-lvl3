@@ -8,7 +8,11 @@ import uuidv4 from 'uuid/v4';
 
 const parseData = (string, type) => {
   const domparser = new DOMParser();
-  const doc = domparser.parseFromString(string, type);
+
+  return domparser.parseFromString(string, type);
+};
+
+const getFeed = (doc) => {
   const title = doc.querySelector('title').textContent;
   const description = doc.querySelector('description').textContent;
   const posts = [].slice.call(doc.querySelectorAll('item'))
@@ -137,7 +141,8 @@ export default () => {
     const feedUrl = formInput.value;
 
     const onResolve = (response) => {
-      const feed = parseData(get(response, 'data', ''), 'application/xml');
+      const data = parseData(get(response, 'data', ''), 'application/xml');
+      const feed = getFeed(data);
 
       state.feeds.push({ ...feed, url: feedUrl });
 
