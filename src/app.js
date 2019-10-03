@@ -4,6 +4,8 @@ import isURL from 'validator/lib/isURL';
 import isEmpty from 'validator/lib/isEmpty';
 import get from 'lodash/get';
 import includes from 'lodash/includes';
+import find from 'lodash/find';
+import findIndex from 'lodash/findIndex';
 import uuidv4 from 'uuid/v4';
 
 const parseData = (string, type) => {
@@ -181,8 +183,46 @@ export default () => {
     state.modal.description = selectedPost.description;
   });
 
+  const updateFeeds = (list = []) => {
+    const onResolve = (response = []) => {
+      response
+        .map((item) => {
+          const data = parseData(get(item, 'data', ''), 'application/xml');
+
+          return getFeed(data);
+        })
+        .forEach((feed) => {
+          const prevFeedIndex = findIndex(list, item => item.title === feed.title);
+          const prevFeed = get(list, `${prevFeedIndex}`, {});
+          const prevPosts = get(prevFeed, 'posts', []);
+          const currentPosts = get(feed, 'posts', []);
+          const newPosts = currentPosts
+            .reduce((accumulator, post) => {
+              const isNew = !find(prevPosts, p => p.link === post.link);
+
+              return isNew ? [...accumulator, post] : accumulator;
+            }, []);
+
+          state.feeds[prevFeedIndex].posts = [...newPosts, ...state.feeds[prevFeedIndex].posts];
+        });
+    };
+
+    const onReject = () => console.log('Something went wrong during feeds update.');
+
+    const requests = list
+      .map(item => axios.get(`${cors}${item.url}`));
+
+    axios
+      .all(requests)
+      .then(onResolve)
+      .catch(onReject)
+      .finally(() => setTimeout(() => updateFeeds(state.feeds), 10000));
+  };
+
   renderForm(state);
   renderFeeds(state);
   renderPosts(state);
   renderModal(state);
+
+  updateFeeds(state.feeds);
 };
