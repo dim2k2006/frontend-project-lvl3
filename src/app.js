@@ -6,6 +6,7 @@ import get from 'lodash/get';
 import includes from 'lodash/includes';
 import find from 'lodash/find';
 import findIndex from 'lodash/findIndex';
+import flatten from 'lodash/flatten';
 import uuidv4 from 'uuid/v4';
 
 const parseDom = (string, type) => {
@@ -175,8 +176,7 @@ export default () => {
     if (!isModalButton) return;
 
     const id = get(event, 'target.dataset.id', undefined);
-    const [selectedPost] = state.feeds
-      .reduce((accumulator, feed) => [...accumulator, ...feed.posts], [])
+    const [selectedPost] = flatten(state.feeds.map(feed => feed.posts))
       .filter(post => post.id === id);
 
     state.modal.title = selectedPost.title;
