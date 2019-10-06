@@ -17,7 +17,7 @@ const parseDom = (string, type) => {
 const getFeed = (doc) => {
   const title = doc.querySelector('title').textContent;
   const description = doc.querySelector('description').textContent;
-  const posts = [].slice.call(doc.querySelectorAll('item'))
+  const posts = Array.from(doc.querySelectorAll('item'))
     .map(item => ({
       id: uuidv4(),
       title: item.querySelector('title').textContent,
