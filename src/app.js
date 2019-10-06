@@ -8,7 +8,7 @@ import find from 'lodash/find';
 import findIndex from 'lodash/findIndex';
 import uuidv4 from 'uuid/v4';
 
-const parseData = (string, type) => {
+const parseDom = (string, type) => {
   const domparser = new DOMParser();
 
   return domparser.parseFromString(string, type);
@@ -143,8 +143,8 @@ export default () => {
     const feedUrl = formInput.value;
 
     const onResolve = (response) => {
-      const data = parseData(get(response, 'data', ''), 'application/xml');
-      const feed = getFeed(data);
+      const dom = parseDom(get(response, 'data', ''), 'application/xml');
+      const feed = getFeed(dom);
 
       state.feeds.push({ ...feed, url: feedUrl });
 
@@ -187,9 +187,9 @@ export default () => {
     const onResolve = (response = []) => {
       response
         .map((item) => {
-          const data = parseData(get(item, 'data', ''), 'application/xml');
+          const dom = parseDom(get(item, 'data', ''), 'application/xml');
 
-          return getFeed(data);
+          return getFeed(dom);
         })
         .forEach((feed) => {
           const prevFeedIndex = findIndex(list, item => item.title === feed.title);
