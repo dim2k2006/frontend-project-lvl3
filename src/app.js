@@ -58,7 +58,7 @@ export default () => {
     formInput.classList[s.form.isValid ? 'remove' : 'add']('is-invalid');
     formInput.disabled = s.form.isFetching;
     formButton.disabled = s.form.isFetching || s.form.submitDisabled;
-    spinner.style.display = s.form.isFetching ? 'inline-block' : 'none';
+    spinner.classList[s.form.isFetching ? 'remove' : 'add']('d-none');
   };
 
   const renderFeeds = (s) => {
