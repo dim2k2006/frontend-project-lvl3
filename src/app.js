@@ -49,22 +49,35 @@ export default () => {
   const formStateMachine = new StateMachine({
     init: 'empty',
     transitions: [
-      { name: 'reset', from: ['invalid', 'valid'], to: 'empty' },
-      { name: 'validate', from: ['empty', 'invalid'], to: 'valid' },
+      { name: 'reset', from: ['invalid', 'valid', 'fetching'], to: 'empty' },
       { name: 'invalidate', from: ['empty', 'valid'], to: 'invalid' },
+      { name: 'validate', from: ['empty', 'invalid'], to: 'valid' },
+      { name: 'fetch', from: 'valid', to: 'fetching' },
+      { name: 'abort', from: 'fetching', to: 'valid' },
     ],
     methods: {
       onReset: () => {
+        state.form.isFetching = false;
         state.form.isValid = true;
+        state.form.submitDisabled = true;
+      },
+      onInvalidate: () => {
+        state.form.isValid = false;
         state.form.submitDisabled = true;
       },
       onValidate: () => {
         state.form.isValid = true;
         state.form.submitDisabled = false;
       },
-      onInvalidate: () => {
-        state.form.isValid = false;
+      onFetch: () => {
+        state.form.isValid = true;
         state.form.submitDisabled = true;
+        state.form.isFetching = true;
+      },
+      onAbort: () => {
+        state.form.isValid = true;
+        state.form.submitDisabled = false;
+        state.form.isFetching = false;
       },
     },
   });
@@ -80,11 +93,11 @@ export default () => {
   const modalBody = modal.querySelector('.modal-body');
 
   const renderForm = (s) => {
-    formInput.classList[formStateMachine.is('valid') || formStateMachine.is('empty') ? 'remove' : 'add']('is-invalid');
-
-    formInput.disabled = s.form.isFetching;
-    formButton.disabled = s.form.isFetching || s.form.submitDisabled;
-    spinner.classList[s.form.isFetching ? 'remove' : 'add']('d-none');
+    formInput.classList[formStateMachine.is('valid') || formStateMachine.is('empty') || formStateMachine.is('fetching') ? 'remove' : 'add']('is-invalid');
+    formInput.disabled = formStateMachine.is('fetching');
+    formInput.value = formStateMachine.is('empty') ? '' : formInput.value;
+    formButton.disabled = formStateMachine.is('fetching') || s.form.submitDisabled;
+    spinner.classList[formStateMachine.is('fetching') ? 'remove' : 'add']('d-none');
   };
 
   const renderFeeds = (s) => {
@@ -171,25 +184,21 @@ export default () => {
 
       state.feeds.push({ ...feed, url: feedUrl });
 
-      form.reset();
-
-      state.form.isValid = true;
-      state.form.submitDisabled = true;
+      if (formStateMachine.can('reset')) formStateMachine.reset();
     };
 
     const onReject = () => {
+      if (formStateMachine.can('abort')) formStateMachine.abort();
+
       alert('Something went wrong. Please try again.');
     };
 
-    state.form.isFetching = true;
+    if (formStateMachine.can('fetch')) formStateMachine.fetch();
 
     axios
       .get(`${cors}${feedUrl}`)
       .then(onResolve)
-      .catch(onReject)
-      .finally(() => {
-        state.form.isFetching = false;
-      });
+      .catch(onReject);
   });
 
   posts.addEventListener('click', (event) => {
