@@ -8,6 +8,7 @@ import find from 'lodash/find';
 import findIndex from 'lodash/findIndex';
 import flatten from 'lodash/flatten';
 import uuidv4 from 'uuid/v4';
+import StateMachine from 'javascript-state-machine';
 
 const parseDom = (string, type) => {
   const domparser = new DOMParser();
@@ -45,6 +46,29 @@ export default () => {
     },
   };
 
+  const formStateMachine = new StateMachine({
+    init: 'empty',
+    transitions: [
+      { name: 'reset', from: ['invalid', 'valid'], to: 'empty' },
+      { name: 'validate', from: ['empty', 'invalid'], to: 'valid' },
+      { name: 'invalidate', from: ['empty', 'valid'], to: 'invalid' },
+    ],
+    methods: {
+      onReset: () => {
+        state.form.isValid = true;
+        state.form.submitDisabled = true;
+      },
+      onValidate: () => {
+        state.form.isValid = true;
+        state.form.submitDisabled = false;
+      },
+      onInvalidate: () => {
+        state.form.isValid = false;
+        state.form.submitDisabled = true;
+      },
+    },
+  });
+
   const form = document.querySelector('form');
   const formInput = form.querySelector('input');
   const formButton = form.querySelector('button');
@@ -56,7 +80,8 @@ export default () => {
   const modalBody = modal.querySelector('.modal-body');
 
   const renderForm = (s) => {
-    formInput.classList[s.form.isValid ? 'remove' : 'add']('is-invalid');
+    formInput.classList[formStateMachine.is('valid') || formStateMachine.is('empty') ? 'remove' : 'add']('is-invalid');
+
     formInput.disabled = s.form.isFetching;
     formButton.disabled = s.form.isFetching || s.form.submitDisabled;
     spinner.classList[s.form.isFetching ? 'remove' : 'add']('d-none');
@@ -121,21 +146,18 @@ export default () => {
     const isValid = isURL(value) && !includes(state.feeds.map(f => f.url), value);
 
     if (isEmpty(value)) {
-      state.form.isValid = true;
-      state.form.submitDisabled = true;
+      if (formStateMachine.can('reset')) formStateMachine.reset();
 
       return;
     }
 
     if (isValid) {
-      state.form.isValid = true;
-      state.form.submitDisabled = false;
+      if (formStateMachine.can('validate')) formStateMachine.validate();
 
       return;
     }
 
-    state.form.isValid = false;
-    state.form.submitDisabled = true;
+    if (formStateMachine.can('invalidate')) formStateMachine.invalidate();
   });
 
   form.addEventListener('submit', (event) => {
