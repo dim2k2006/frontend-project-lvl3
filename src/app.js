@@ -39,6 +39,9 @@ export default () => {
       title: '',
       description: '',
     },
+    error: {
+      message: '',
+    },
   };
 
   const form = document.querySelector('form');
@@ -50,6 +53,8 @@ export default () => {
   const modal = document.querySelector('#modal');
   const modalTitle = modal.querySelector('.modal-title');
   const modalBody = modal.querySelector('.modal-body');
+  const error = document.querySelector('#error');
+  const errorMessage = error.querySelector('span');
 
   const formStatesMap = {
     init: () => {
@@ -61,6 +66,7 @@ export default () => {
     },
     invalid: () => {
       formInput.classList.add('is-invalid');
+      formButton.disabled = true;
     },
     processing: () => {
       formInput.disabled = true;
@@ -72,9 +78,13 @@ export default () => {
       formInput.disabled = false;
       formButton.disabled = false;
       spinner.classList.add('d-none');
+      error.classList.add('d-none');
     },
     error: () => {
-
+      error.classList.remove('d-none');
+      formInput.disabled = false;
+      formButton.disabled = false;
+      spinner.classList.add('d-none');
     },
   };
 
@@ -125,6 +135,10 @@ export default () => {
     modalBody.textContent = s.modal.description;
   };
 
+  const renderError = (s) => {
+    errorMessage.textContent = s.error.message;
+  };
+
   watch(state, 'form', () => {
     renderForm(state);
   });
@@ -136,6 +150,10 @@ export default () => {
 
   watch(state, 'modal', () => {
     renderModal(state);
+  });
+
+  watch(state, 'error', () => {
+    renderError(state);
   });
 
   formInput.addEventListener('input', (event) => {
@@ -173,8 +191,7 @@ export default () => {
 
     const onReject = () => {
       state.form = 'error';
-
-      alert('Something went wrong. Please try again.');
+      state.error.message = 'Something went wrong during feed fetching. Please try again 😉';
     };
 
     state.form = 'processing';
