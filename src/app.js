@@ -8,7 +8,6 @@ import find from 'lodash/find';
 import findIndex from 'lodash/findIndex';
 import flatten from 'lodash/flatten';
 import uuidv4 from 'uuid/v4';
-import StateMachine from 'javascript-state-machine';
 
 const parseDom = (string, type) => {
   const domparser = new DOMParser();
@@ -34,53 +33,13 @@ export default () => {
   const cors = 'https://cors-anywhere.herokuapp.com/';
 
   const state = {
-    form: {
-      isValid: true,
-      isFetching: false,
-      submitDisabled: true,
-    },
+    form: 'init', // init, valid, invalid, processing, processed, error
     feeds: [],
     modal: {
       title: '',
       description: '',
     },
   };
-
-  const formStateMachine = new StateMachine({
-    init: 'empty',
-    transitions: [
-      { name: 'reset', from: ['invalid', 'valid', 'fetching'], to: 'empty' },
-      { name: 'invalidate', from: ['empty', 'valid'], to: 'invalid' },
-      { name: 'validate', from: ['empty', 'invalid'], to: 'valid' },
-      { name: 'fetch', from: 'valid', to: 'fetching' },
-      { name: 'abort', from: 'fetching', to: 'valid' },
-    ],
-    methods: {
-      onReset: () => {
-        state.form.isFetching = false;
-        state.form.isValid = true;
-        state.form.submitDisabled = true;
-      },
-      onInvalidate: () => {
-        state.form.isValid = false;
-        state.form.submitDisabled = true;
-      },
-      onValidate: () => {
-        state.form.isValid = true;
-        state.form.submitDisabled = false;
-      },
-      onFetch: () => {
-        state.form.isValid = true;
-        state.form.submitDisabled = true;
-        state.form.isFetching = true;
-      },
-      onAbort: () => {
-        state.form.isValid = true;
-        state.form.submitDisabled = false;
-        state.form.isFetching = false;
-      },
-    },
-  });
 
   const form = document.querySelector('form');
   const formInput = form.querySelector('input');
@@ -92,12 +51,37 @@ export default () => {
   const modalTitle = modal.querySelector('.modal-title');
   const modalBody = modal.querySelector('.modal-body');
 
+  const formStatesMap = {
+    init: () => {
+      formButton.disabled = true;
+    },
+    valid: () => {
+      formInput.classList.remove('is-invalid');
+      formButton.disabled = false;
+    },
+    invalid: () => {
+      formInput.classList.add('is-invalid');
+    },
+    processing: () => {
+      formInput.disabled = true;
+      formButton.disabled = true;
+      spinner.classList.remove('d-none');
+    },
+    processed: () => {
+      formInput.value = '';
+      formInput.disabled = false;
+      formButton.disabled = false;
+      spinner.classList.add('d-none');
+    },
+    error: () => {
+
+    },
+  };
+
   const renderForm = (s) => {
-    formInput.classList[formStateMachine.is('valid') || formStateMachine.is('empty') || formStateMachine.is('fetching') ? 'remove' : 'add']('is-invalid');
-    formInput.disabled = formStateMachine.is('fetching');
-    formInput.value = formStateMachine.is('empty') ? '' : formInput.value;
-    formButton.disabled = formStateMachine.is('fetching') || s.form.submitDisabled;
-    spinner.classList[formStateMachine.is('fetching') ? 'remove' : 'add']('d-none');
+    const process = formStatesMap[s.form];
+
+    process();
   };
 
   const renderFeeds = (s) => {
@@ -159,18 +143,18 @@ export default () => {
     const isValid = isURL(value) && !includes(state.feeds.map(f => f.url), value);
 
     if (isEmpty(value)) {
-      if (formStateMachine.can('reset')) formStateMachine.reset();
+      state.form = 'init';
 
       return;
     }
 
     if (isValid) {
-      if (formStateMachine.can('validate')) formStateMachine.validate();
+      state.form = 'valid';
 
       return;
     }
 
-    if (formStateMachine.can('invalidate')) formStateMachine.invalidate();
+    state.form = 'invalid';
   });
 
   form.addEventListener('submit', (event) => {
@@ -184,16 +168,16 @@ export default () => {
 
       state.feeds.push({ ...feed, url: feedUrl });
 
-      if (formStateMachine.can('reset')) formStateMachine.reset();
+      state.form = 'processed';
     };
 
     const onReject = () => {
-      if (formStateMachine.can('abort')) formStateMachine.abort();
+      state.form = 'error';
 
       alert('Something went wrong. Please try again.');
     };
 
-    if (formStateMachine.can('fetch')) formStateMachine.fetch();
+    state.form = 'processing';
 
     axios
       .get(`${cors}${feedUrl}`)
