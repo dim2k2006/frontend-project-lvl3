@@ -21,7 +21,7 @@ const getFeed = (data) => {
     .map(item => ({
       id: uuidv4(),
       title: item.title,
-      description: item.description,
+      description: item.content,
       link: item.link,
     }));
 
