@@ -8,22 +8,21 @@ import find from 'lodash/find';
 import findIndex from 'lodash/findIndex';
 import flatten from 'lodash/flatten';
 import uuidv4 from 'uuid/v4';
+import Parser from 'rss-parser';
 
-const parseDom = (string, type) => {
-  const domparser = new DOMParser();
+const parser = new Parser();
 
-  return domparser.parseFromString(string, type);
-};
+const parseRss = string => parser.parseString(string);
 
-const getFeed = (doc) => {
-  const title = doc.querySelector('title').textContent;
-  const description = doc.querySelector('description').textContent;
-  const posts = Array.from(doc.querySelectorAll('item'))
+const getFeed = (data) => {
+  const title = get(data, 'title', '');
+  const description = get(data, 'description', '');
+  const posts = get(data, 'items', [])
     .map(item => ({
       id: uuidv4(),
-      title: item.querySelector('title').textContent,
-      description: item.querySelector('description').textContent,
-      link: item.querySelector('link').textContent,
+      title: item.title,
+      description: item.description,
+      link: item.link,
     }));
 
   return { title, description, posts };
@@ -180,14 +179,14 @@ export default () => {
 
     const feedUrl = formInput.value;
 
-    const onResolve = (response) => {
-      const dom = parseDom(get(response, 'data', ''), 'application/xml');
-      const feed = getFeed(dom);
+    const onResolve = response => parseRss(get(response, 'data', ''))
+      .then((data) => {
+        const feed = getFeed(data);
 
-      state.feeds.push({ ...feed, url: feedUrl });
+        state.feeds.push({ ...feed, url: feedUrl });
 
-      state.form = 'processed';
-    };
+        state.form = 'processed';
+      });
 
     const onReject = () => {
       state.form = 'error';
@@ -216,13 +215,10 @@ export default () => {
   });
 
   const updateFeeds = (list = []) => {
-    const onResolve = (response = []) => {
-      response
-        .map((item) => {
-          const dom = parseDom(get(item, 'data', ''), 'application/xml');
-
-          return getFeed(dom);
-        })
+    const onResolve = (response = []) => Promise
+      .all(response.map(item => parseRss(get(item, 'data', ''))))
+      .then((data = []) => data
+        .map(getFeed)
         .forEach((feed) => {
           const prevFeedIndex = findIndex(list, item => item.title === feed.title);
           const prevFeed = get(list, `${prevFeedIndex}`, {});
@@ -236,8 +232,7 @@ export default () => {
             }, []);
 
           state.feeds[prevFeedIndex].posts = [...newPosts, ...state.feeds[prevFeedIndex].posts];
-        });
-    };
+        }));
 
     const onReject = () => console.log('Something went wrong during feeds update.');
 
