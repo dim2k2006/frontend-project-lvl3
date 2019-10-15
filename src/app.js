@@ -4,7 +4,6 @@ import isURL from 'validator/lib/isURL';
 import isEmpty from 'validator/lib/isEmpty';
 import get from 'lodash/get';
 import includes from 'lodash/includes';
-import find from 'lodash/find';
 import findIndex from 'lodash/findIndex';
 import flatten from 'lodash/flatten';
 import differenceBy from 'lodash/differenceBy';
