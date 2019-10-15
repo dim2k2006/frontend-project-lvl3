@@ -8,7 +8,19 @@ import findIndex from 'lodash/findIndex';
 import flatten from 'lodash/flatten';
 import differenceBy from 'lodash/differenceBy';
 import uuidv4 from 'uuid/v4';
+import i18next from 'i18next';
 import Parser from 'rss-parser';
+
+i18next.init({
+  lng: 'en',
+  resources: {
+    en: {
+      translation: {
+        fetchError: 'Something went wrong during feed fetching. Please try again 😉',
+      },
+    },
+  },
+});
 
 const parser = new Parser();
 
@@ -190,7 +202,8 @@ export default () => {
 
     const onReject = () => {
       state.form = 'error';
-      state.error.message = 'Something went wrong during feed fetching. Please try again 😉';
+
+      state.error.message = i18next.t('fetchError');
     };
 
     state.form = 'processing';
