@@ -7,6 +7,7 @@ import includes from 'lodash/includes';
 import find from 'lodash/find';
 import findIndex from 'lodash/findIndex';
 import flatten from 'lodash/flatten';
+import differenceBy from 'lodash/differenceBy';
 import uuidv4 from 'uuid/v4';
 import Parser from 'rss-parser';
 
@@ -224,12 +225,7 @@ export default () => {
           const prevFeed = get(list, `${prevFeedIndex}`, {});
           const prevPosts = get(prevFeed, 'posts', []);
           const currentPosts = get(feed, 'posts', []);
-          const newPosts = currentPosts
-            .reduce((accumulator, post) => {
-              const isNew = !find(prevPosts, p => p.link === post.link);
-
-              return isNew ? [...accumulator, post] : accumulator;
-            }, []);
+          const newPosts = differenceBy(currentPosts, prevPosts, 'link');
 
           state.feeds[prevFeedIndex].posts = [...newPosts, ...state.feeds[prevFeedIndex].posts];
         }));
