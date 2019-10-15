@@ -16,7 +16,7 @@ i18next.init({
   resources: {
     en: {
       translation: {
-        fetchError: 'Something went wrong during feed fetching. Please try again 😉',
+        FETCH_ERR: 'Something went wrong during feed fetching. Please try again 😉',
       },
     },
   },
@@ -50,9 +50,7 @@ export default () => {
       title: '',
       description: '',
     },
-    error: {
-      message: '',
-    },
+    error: '',
   };
 
   const form = document.querySelector('form');
@@ -147,7 +145,7 @@ export default () => {
   };
 
   const renderError = (s) => {
-    errorMessage.textContent = s.error.message;
+    errorMessage.textContent = i18next.t(s.error);
   };
 
   watch(state, 'form', () => {
@@ -203,7 +201,7 @@ export default () => {
     const onReject = () => {
       state.form = 'error';
 
-      state.error.message = i18next.t('fetchError');
+      state.error = 'FETCH_ERR';
     };
 
     state.form = 'processing';
