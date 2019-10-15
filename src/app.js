@@ -215,19 +215,24 @@ export default () => {
   });
 
   const updateFeeds = (list = []) => {
-    const onResolve = (response = []) => Promise
-      .all(response.map(item => parseRss(get(item, 'data', ''))))
-      .then((data = []) => data
-        .map(getFeed)
-        .forEach((feed) => {
-          const prevFeedIndex = findIndex(list, item => item.title === feed.title);
-          const prevFeed = get(list, `${prevFeedIndex}`, {});
-          const prevPosts = get(prevFeed, 'posts', []);
-          const currentPosts = get(feed, 'posts', []);
-          const newPosts = differenceBy(currentPosts, prevPosts, 'link');
+    const onResolve = (response = []) => {
+      const parserPromises = response
+        .map(item => parseRss(get(item, 'data', '')));
 
-          state.feeds[prevFeedIndex].posts = [...newPosts, ...state.feeds[prevFeedIndex].posts];
-        }));
+      Promise
+        .all(parserPromises)
+        .then((data = []) => data
+          .map(getFeed)
+          .forEach((feed) => {
+            const prevFeedIndex = findIndex(list, item => item.title === feed.title);
+            const prevFeed = get(list, `${prevFeedIndex}`, {});
+            const prevPosts = get(prevFeed, 'posts', []);
+            const currentPosts = get(feed, 'posts', []);
+            const newPosts = differenceBy(currentPosts, prevPosts, 'link');
+
+            state.feeds[prevFeedIndex].posts = [...newPosts, ...state.feeds[prevFeedIndex].posts];
+          }));
+    };
 
     const onReject = () => console.log('Something went wrong during feeds update.');
 
