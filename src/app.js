@@ -213,11 +213,11 @@ export default () => {
   });
 
   posts.addEventListener('click', (event) => {
-    const isModalButton = get(event, 'target.dataset.toggle', undefined) === 'modal';
+    const isModalButton = get(event, 'target.dataset.toggle', null) === 'modal';
 
     if (!isModalButton) return;
 
-    const id = get(event, 'target.dataset.id', undefined);
+    const id = get(event, 'target.dataset.id', null);
     const [selectedPost] = flatten(state.feeds.map(feed => feed.posts))
       .filter(post => post.id === id);
 
