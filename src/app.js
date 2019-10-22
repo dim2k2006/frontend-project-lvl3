@@ -213,7 +213,7 @@ export default () => {
   });
 
   posts.addEventListener('click', (event) => {
-    const isModalButton = get(event, 'target.dataset.toggle', null) === 'modal';
+    const isModalButton = get(event, 'target.dataset.toggle') === 'modal';
 
     if (!isModalButton) return;
 
