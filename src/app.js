@@ -33,7 +33,7 @@ export default () => {
   const cors = 'https://cors-anywhere.herokuapp.com/';
 
   const state = {
-    form: 'init', // init, valid, invalid, processing, processed, error
+    addingFeed: 'init', // init, valid, invalid, processing, processed, error
     feeds: [],
     modal: {
       title: '',
@@ -87,7 +87,7 @@ export default () => {
   };
 
   const renderForm = (s) => {
-    const process = formStatesMap[s.form];
+    const process = formStatesMap[s.addingFeed];
 
     process();
   };
@@ -137,7 +137,7 @@ export default () => {
     errorMessage.textContent = i18n.t(s.error);
   };
 
-  watch(state, 'form', () => {
+  watch(state, 'addingFeed', () => {
     renderForm(state);
   });
 
@@ -159,18 +159,18 @@ export default () => {
     const isValid = isURL(value) && !includes(state.feeds.map(f => f.url), value);
 
     if (isEmpty(value)) {
-      state.form = 'init';
+      state.addingFeed = 'init';
 
       return;
     }
 
     if (isValid) {
-      state.form = 'valid';
+      state.addingFeed = 'valid';
 
       return;
     }
 
-    state.form = 'invalid';
+    state.addingFeed = 'invalid';
   });
 
   form.addEventListener('submit', (event) => {
@@ -184,16 +184,16 @@ export default () => {
 
         state.feeds.push({ ...feed, url: feedUrl });
 
-        state.form = 'processed';
+        state.addingFeed = 'processed';
       });
 
     const onReject = () => {
-      state.form = 'error';
+      state.addingFeed = 'error';
 
       state.error = 'FETCH_ERR';
     };
 
-    state.form = 'processing';
+    state.addingFeed = 'processing';
 
     axios
       .get(`${cors}${feedUrl}`)
