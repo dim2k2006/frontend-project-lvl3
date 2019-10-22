@@ -225,9 +225,9 @@ export default () => {
           .map(getFeed)
           .forEach((feed) => {
             const prevFeedIndex = findIndex(list, item => item.title === feed.title);
-            const prevFeed = get(list, `${prevFeedIndex}`, {});
-            const prevPosts = get(prevFeed, 'posts', []);
-            const currentPosts = get(feed, 'posts', []);
+            const prevFeed = get(list, `${prevFeedIndex}`);
+            const prevPosts = get(prevFeed, 'posts');
+            const currentPosts = get(feed, 'posts');
             const newPosts = differenceBy(currentPosts, prevPosts, 'link');
 
             state.feeds[prevFeedIndex].posts = [...newPosts, ...state.feeds[prevFeedIndex].posts];
