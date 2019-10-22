@@ -240,16 +240,15 @@ export default () => {
   });
 
   posts.addEventListener('click', (event) => {
-    const isModalButton = get(event, 'target.dataset.toggle') === 'modal';
-
-    if (!isModalButton) return;
-
     const id = get(event, 'target.dataset.id', null);
     const [selectedPost] = flatten(state.feeds.map(feed => feed.posts))
       .filter(post => post.id === id);
 
-    state.modal.title = selectedPost.title;
-    state.modal.description = selectedPost.description;
+    const title = get(selectedPost, 'title', '');
+    const description = get(selectedPost, 'description', '');
+
+    state.modal.title = title;
+    state.modal.description = description;
   });
 
   const updateFeeds = (list = []) => {
