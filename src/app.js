@@ -34,12 +34,14 @@ export default () => {
 
   const state = {
     addingFeed: 'init', // init, valid, invalid, processing, processed, error
+    updatingFeeds: 'init', // init, error
     feeds: [],
     modal: {
       title: '',
       description: '',
     },
     error: '',
+    updateFeedsError: '',
   };
 
   const form = document.querySelector('form');
@@ -48,11 +50,16 @@ export default () => {
   const spinner = formButton.querySelector('span');
   const feeds = document.querySelector('#feeds');
   const posts = document.querySelector('#posts');
+
   const modal = document.querySelector('#modal');
   const modalTitle = modal.querySelector('.modal-title');
   const modalBody = modal.querySelector('.modal-body');
+
   const error = document.querySelector('#error');
   const errorMessage = error.querySelector('span');
+
+  const updateFeedsError = document.querySelector('#updateError');
+  const updateFeedsErrorMessage = updateFeedsError.querySelector('span');
 
   const formStatesMap = {
     init: () => {
@@ -74,7 +81,7 @@ export default () => {
     processed: () => {
       formInput.value = '';
       formInput.disabled = false;
-      formButton.disabled = false;
+      formButton.disabled = true;
       spinner.classList.add('d-none');
       error.classList.add('d-none');
     },
@@ -86,8 +93,23 @@ export default () => {
     },
   };
 
+  const updatingFeedsStateMap = {
+    init: () => {
+      updateFeedsError.classList.add('d-none');
+    },
+    error: () => {
+      updateFeedsError.classList.remove('d-none');
+    },
+  };
+
   const renderForm = (s) => {
     const process = formStatesMap[s.addingFeed];
+
+    process();
+  };
+
+  const renderUpdatingFeeds = (s) => {
+    const process = updatingFeedsStateMap[s.updatingFeeds];
 
     process();
   };
@@ -137,8 +159,16 @@ export default () => {
     errorMessage.textContent = i18n.t(s.error);
   };
 
+  const renderUpdateFeedsError = (s) => {
+    updateFeedsErrorMessage.textContent = i18n.t(s.updateFeedsError);
+  };
+
   watch(state, 'addingFeed', () => {
     renderForm(state);
+  });
+
+  watch(state, 'updatingFeeds', () => {
+    renderUpdatingFeeds(state);
   });
 
   watch(state, 'feeds', () => {
@@ -152,6 +182,14 @@ export default () => {
 
   watch(state, 'error', () => {
     renderError(state);
+  });
+
+  watch(state, 'error', () => {
+    renderError(state);
+  });
+
+  watch(state, 'updateFeedsError', () => {
+    renderUpdateFeedsError(state);
   });
 
   formInput.addEventListener('input', (event) => {
@@ -231,10 +269,14 @@ export default () => {
             const newPosts = differenceBy(currentPosts, prevPosts, 'link');
 
             state.feeds[prevFeedIndex].posts = [...newPosts, ...state.feeds[prevFeedIndex].posts];
+            state.updatingFeeds = 'init';
           }));
     };
 
-    const onReject = () => console.log('Something went wrong during feeds update.');
+    const onReject = () => {
+      state.updatingFeeds = 'error';
+      state.updateFeedsError = 'UPDATE_ERR';
+    };
 
     const requests = list
       .map(item => axios.get(`${cors}${item.url}`));
