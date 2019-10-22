@@ -8,19 +8,8 @@ import findIndex from 'lodash/findIndex';
 import flatten from 'lodash/flatten';
 import differenceBy from 'lodash/differenceBy';
 import uuidv4 from 'uuid/v4';
-import i18next from 'i18next';
 import Parser from 'rss-parser';
-
-i18next.init({
-  lng: 'en',
-  resources: {
-    en: {
-      translation: {
-        FETCH_ERR: 'Something went wrong during feed fetching. Please try again 😉',
-      },
-    },
-  },
-});
+import i18n from './i18n';
 
 const parser = new Parser();
 
@@ -145,7 +134,7 @@ export default () => {
   };
 
   const renderError = (s) => {
-    errorMessage.textContent = i18next.t(s.error);
+    errorMessage.textContent = i18n.t(s.error);
   };
 
   watch(state, 'form', () => {
