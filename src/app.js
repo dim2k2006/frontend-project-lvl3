@@ -221,7 +221,7 @@ export default () => {
 
       Promise
         .all(parserPromises)
-        .then((data = []) => data
+        .then(data => data
           .map(getFeed)
           .forEach((feed) => {
             const prevFeedIndex = findIndex(list, item => item.title === feed.title);
