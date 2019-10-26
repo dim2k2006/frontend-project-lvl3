@@ -9,7 +9,7 @@ import flatten from 'lodash/flatten';
 import differenceBy from 'lodash/differenceBy';
 import uuidv4 from 'uuid/v4';
 import Parser from 'rss-parser';
-import i18n from './i18n';
+import getTranslations from './i18n';
 
 const parser = new Parser();
 
@@ -31,6 +31,7 @@ const getFeed = (data) => {
 
 export default () => {
   const cors = 'https://cors-anywhere.herokuapp.com/';
+  const i18n = getTranslations();
 
   const state = {
     addingFeed: 'init', // init, valid, invalid, processing, processed, error
