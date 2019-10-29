@@ -16,17 +16,24 @@ const parser = new Parser();
 const parseRss = string => parser.parseString(string);
 
 const getFeed = (data) => {
+  const feedId = uuidv4();
   const title = get(data, 'title', '');
   const description = get(data, 'description', '');
   const posts = get(data, 'items', [])
     .map(item => ({
       id: uuidv4(),
+      feedId,
       title: item.title,
       description: item.content,
       link: item.link,
     }));
 
-  return { title, description, posts };
+  return {
+    id: feedId,
+    title,
+    description,
+    posts,
+  };
 };
 
 export default () => {
@@ -37,6 +44,7 @@ export default () => {
     addingFeed: 'init', // init, valid, invalid, processing, processed, error
     updatingFeeds: 'init', // init, error
     feeds: [],
+    posts: [],
     modal: {
       title: '',
       description: '',
@@ -45,61 +53,61 @@ export default () => {
     updateFeedsError: '',
   };
 
-  const form = document.querySelector('form');
-  const formInput = form.querySelector('input');
-  const formButton = form.querySelector('button');
-  const spinner = formButton.querySelector('span');
-  const feeds = document.querySelector('#feeds');
-  const posts = document.querySelector('#posts');
+  const formRoot = document.querySelector('form');
+  const formInputRoot = formRoot.querySelector('input');
+  const formButtonRoot = formRoot.querySelector('button');
+  const spinnerRoot = formButtonRoot.querySelector('span');
+  const feedsRoot = document.querySelector('#feeds');
+  const postsRoot = document.querySelector('#posts');
 
-  const modal = document.querySelector('#modal');
-  const modalTitle = modal.querySelector('.modal-title');
-  const modalBody = modal.querySelector('.modal-body');
+  const modalRoot = document.querySelector('#modal');
+  const modalTitleRoot = modalRoot.querySelector('.modal-title');
+  const modalBodyRoot = modalRoot.querySelector('.modal-body');
 
-  const error = document.querySelector('#error');
-  const errorMessage = error.querySelector('span');
+  const errorRoot = document.querySelector('#error');
+  const errorMessageRoot = errorRoot.querySelector('span');
 
-  const updateFeedsError = document.querySelector('#updateError');
-  const updateFeedsErrorMessage = updateFeedsError.querySelector('span');
+  const updateFeedsErrorRoot = document.querySelector('#updateError');
+  const updateFeedsErrorMessageRoot = updateFeedsErrorRoot.querySelector('span');
 
   const formStatesMap = {
     init: () => {
-      formButton.disabled = true;
+      formButtonRoot.disabled = true;
     },
     valid: () => {
-      formInput.classList.remove('is-invalid');
-      formButton.disabled = false;
+      formInputRoot.classList.remove('is-invalid');
+      formButtonRoot.disabled = false;
     },
     invalid: () => {
-      formInput.classList.add('is-invalid');
-      formButton.disabled = true;
+      formInputRoot.classList.add('is-invalid');
+      formButtonRoot.disabled = true;
     },
     processing: () => {
-      formInput.disabled = true;
-      formButton.disabled = true;
-      spinner.classList.remove('d-none');
+      formInputRoot.disabled = true;
+      formButtonRoot.disabled = true;
+      spinnerRoot.classList.remove('d-none');
     },
     processed: () => {
-      formInput.value = '';
-      formInput.disabled = false;
-      formButton.disabled = true;
-      spinner.classList.add('d-none');
-      error.classList.add('d-none');
+      formInputRoot.value = '';
+      formInputRoot.disabled = false;
+      formButtonRoot.disabled = true;
+      spinnerRoot.classList.add('d-none');
+      errorRoot.classList.add('d-none');
     },
     error: () => {
-      error.classList.remove('d-none');
-      formInput.disabled = false;
-      formButton.disabled = false;
-      spinner.classList.add('d-none');
+      errorRoot.classList.remove('d-none');
+      formInputRoot.disabled = false;
+      formButtonRoot.disabled = false;
+      spinnerRoot.classList.add('d-none');
     },
   };
 
   const updatingFeedsStateMap = {
     init: () => {
-      updateFeedsError.classList.add('d-none');
+      updateFeedsErrorRoot.classList.add('d-none');
     },
     error: () => {
-      updateFeedsError.classList.remove('d-none');
+      updateFeedsErrorRoot.classList.remove('d-none');
     },
   };
 
@@ -120,22 +128,23 @@ export default () => {
       .map(feed => `<li class="list-group-item"><h5>${feed.title}</h5><p>${feed.description}</p></li>`)
       .join('');
 
-    feeds.innerHTML = html;
+    feedsRoot.innerHTML = html;
   };
 
   const renderPosts = (s) => {
     const html = s.feeds
       .map((feed) => {
-        const postsHtml = feed.posts
+        const postsHtml = s.posts
+          .filter(post => post.feedId === feed.id)
           .map(post => `
               <div class="card" style="margin-bottom: 15px;">
                   <div class="card-body">
                     <div>
                         <a href="${post.link}" target="_blank">${post.title}</a>
                     </div>
-                    
+
                     <br>
-                    
+
                     <div>
                         <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#modal" data-id="${post.id}">Preview</button>
                     </div>
@@ -148,20 +157,20 @@ export default () => {
       })
       .join('');
 
-    posts.innerHTML = html;
+    postsRoot.innerHTML = html;
   };
 
   const renderModal = (s) => {
-    modalTitle.textContent = s.modal.title;
-    modalBody.textContent = s.modal.description;
+    modalTitleRoot.textContent = s.modal.title;
+    modalBodyRoot.textContent = s.modal.description;
   };
 
   const renderError = (s) => {
-    errorMessage.textContent = i18n.t(s.error);
+    errorMessageRoot.textContent = i18n.t(s.error);
   };
 
   const renderUpdateFeedsError = (s) => {
-    updateFeedsErrorMessage.textContent = i18n.t(s.updateFeedsError);
+    updateFeedsErrorMessageRoot.textContent = i18n.t(s.updateFeedsError);
   };
 
   watch(state, 'addingFeed', () => {
@@ -193,7 +202,7 @@ export default () => {
     renderUpdateFeedsError(state);
   });
 
-  formInput.addEventListener('input', (event) => {
+  formInputRoot.addEventListener('input', (event) => {
     const value = get(event, 'target.value', '');
     const isValid = isURL(value) && !includes(state.feeds.map(f => f.url), value);
 
@@ -212,16 +221,27 @@ export default () => {
     state.addingFeed = 'invalid';
   });
 
-  form.addEventListener('submit', (event) => {
+  formRoot.addEventListener('submit', (event) => {
     event.preventDefault();
 
-    const feedUrl = formInput.value;
+    const feedUrl = formInputRoot.value;
 
     const onResolve = response => parseRss(get(response, 'data', ''))
       .then((data) => {
         const feed = getFeed(data);
+        const id = get(feed, 'id');
+        const title = get(feed, 'title');
+        const description = get(feed, 'description');
+        const posts = get(feed, 'posts');
 
-        state.feeds.push({ ...feed, url: feedUrl });
+        state.feeds.push({
+          id,
+          title,
+          description,
+          url: feedUrl,
+        });
+
+        state.posts = [...state.posts, ...posts];
 
         state.addingFeed = 'processed';
       });
@@ -240,7 +260,7 @@ export default () => {
       .catch(onReject);
   });
 
-  posts.addEventListener('click', (event) => {
+  postsRoot.addEventListener('click', (event) => {
     const id = get(event, 'target.dataset.id', null);
     const [selectedPost] = flatten(state.feeds.map(feed => feed.posts))
       .filter(post => post.id === id);
