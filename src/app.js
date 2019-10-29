@@ -3,9 +3,9 @@ import { watch } from 'melanke-watchjs';
 import isURL from 'validator/lib/isURL';
 import isEmpty from 'validator/lib/isEmpty';
 import get from 'lodash/get';
+import find from 'lodash/find';
 import includes from 'lodash/includes';
 import findIndex from 'lodash/findIndex';
-import flatten from 'lodash/flatten';
 import differenceBy from 'lodash/differenceBy';
 import uuidv4 from 'uuid/v4';
 import Parser from 'rss-parser';
@@ -262,8 +262,7 @@ export default () => {
 
   postsRoot.addEventListener('click', (event) => {
     const id = get(event, 'target.dataset.id', null);
-    const [selectedPost] = flatten(state.feeds.map(feed => feed.posts))
-      .filter(post => post.id === id);
+    const selectedPost = find(state.posts, post => post.id === id);
 
     const title = get(selectedPost, 'title', '');
     const description = get(selectedPost, 'description', '');
