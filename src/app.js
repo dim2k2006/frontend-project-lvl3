@@ -5,7 +5,6 @@ import isEmpty from 'validator/lib/isEmpty';
 import get from 'lodash/get';
 import find from 'lodash/find';
 import includes from 'lodash/includes';
-import findIndex from 'lodash/findIndex';
 import differenceBy from 'lodash/differenceBy';
 import uuidv4 from 'uuid/v4';
 import Parser from 'rss-parser';
@@ -16,20 +15,20 @@ const parser = new Parser();
 const parseRss = string => parser.parseString(string);
 
 const getFeed = (data) => {
-  const feedId = uuidv4();
+  const feedUrl = get(data, 'feedUrl', '');
   const title = get(data, 'title', '');
   const description = get(data, 'description', '');
   const posts = get(data, 'items', [])
     .map(item => ({
       id: uuidv4(),
-      feedId,
       title: item.title,
       description: item.content,
       link: item.link,
+      feedUrl,
     }));
 
   return {
-    id: feedId,
+    url: feedUrl,
     title,
     description,
     posts,
@@ -135,7 +134,7 @@ export default () => {
     const html = s.feeds
       .map((feed) => {
         const postsHtml = s.posts
-          .filter(post => post.feedId === feed.id)
+          .filter(post => post.feedUrl === feed.url)
           .map(post => `
               <div class="card" style="margin-bottom: 15px;">
                   <div class="card-body">
@@ -186,6 +185,10 @@ export default () => {
     renderPosts(state);
   });
 
+  watch(state, 'posts', () => {
+    renderPosts(state);
+  });
+
   watch(state, 'modal', () => {
     renderModal(state);
   });
@@ -224,21 +227,18 @@ export default () => {
   formRoot.addEventListener('submit', (event) => {
     event.preventDefault();
 
-    const feedUrl = formInputRoot.value;
-
     const onResolve = response => parseRss(get(response, 'data', ''))
       .then((data) => {
         const feed = getFeed(data);
-        const id = get(feed, 'id');
+        const url = get(feed, 'url');
         const title = get(feed, 'title');
         const description = get(feed, 'description');
         const posts = get(feed, 'posts');
 
         state.feeds.push({
-          id,
+          url,
           title,
           description,
-          url: feedUrl,
         });
 
         state.posts = [...state.posts, ...posts];
@@ -255,7 +255,7 @@ export default () => {
     state.addingFeed = 'processing';
 
     axios
-      .get(`${cors}${feedUrl}`)
+      .get(`${cors}${formInputRoot.value}`)
       .then(onResolve)
       .catch(onReject);
   });
@@ -281,13 +281,11 @@ export default () => {
         .then(data => data
           .map(getFeed)
           .forEach((feed) => {
-            const prevFeedIndex = findIndex(list, item => item.title === feed.title);
-            const prevFeed = get(list, `${prevFeedIndex}`);
-            const prevPosts = get(prevFeed, 'posts');
+            const prevPosts = state.posts.filter(post => post.feedUrl === feed.url);
             const currentPosts = get(feed, 'posts');
             const newPosts = differenceBy(currentPosts, prevPosts, 'link');
 
-            state.feeds[prevFeedIndex].posts = [...newPosts, ...state.feeds[prevFeedIndex].posts];
+            state.posts = [...newPosts, ...state.posts];
             state.updatingFeeds = 'init';
           }));
     };
