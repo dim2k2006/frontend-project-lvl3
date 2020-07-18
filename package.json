@@ -26,7 +26,7 @@
     "i18next": "^17.2.0",
     "javascript-state-machine": "^3.1.0",
     "jquery": "^3.4.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "melanke-watchjs": "^1.5.0",
     "popper.js": "^1.15.0",
     "rss-parser": "^3.7.2",
